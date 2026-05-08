@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from tarostory_contract import (
+from image_gen_contract import (
     CURRENT_SCHEMA_VERSION,
     CompletionMessage,
     JobInputPhoto,

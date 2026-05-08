@@ -1,13 +1,13 @@
-# tarostory-contract
+# Image Gen Contract
 
 Wire-format contract for the two Pub/Sub messages that flow between the
-Tarostory API server (`../Application/server`) and the image-gen worker
+TaroStory API server (`../Application/server`) and the image-gen worker
 (`../ImageGenWorker`):
 
 | Topic               | Direction              | Schema                                    |
 | ------------------- | ---------------------- | ----------------------------------------- |
-| `image-gen-jobs`    | API → worker           | `tarostory_contract/schemas/job.json`        |
-| `job-completed`     | worker → API           | `tarostory_contract/schemas/completion.json` |
+| `image-gen-jobs`    | API → worker           | `image_gen_contract/schemas/job.json`        |
+| `job-completed`     | worker → API           | `image_gen_contract/schemas/completion.json` |
 
 Both repos consume this package; **structural drift between worker and API
 server is the class of bug this repo exists to make impossible.**
@@ -15,7 +15,7 @@ server is the class of bug this repo exists to make impossible.**
 ## Layout
 
 ```
-tarostory_contract/
+image_gen_contract/
   __init__.py        # re-exports
   messages.py        # Pydantic v2 bindings (the Python binding both repos use)
   schemas.py         # load_schema("job"|"completion") for raw-JSON consumers
@@ -30,7 +30,7 @@ tests/
 ## Use from Python
 
 ```python
-from tarostory_contract import (
+from image_gen_contract import (
     CURRENT_SCHEMA_VERSION,
     JobMessage,
     JobInputPhoto,
@@ -45,7 +45,7 @@ schema = load_schema("job")                          # raw JSON Schema dict
 
 ## Use from another language
 
-The JSON Schemas in `tarostory_contract/schemas/` are Draft 2020-12 and are
+The JSON Schemas in `image_gen_contract/schemas/` are Draft 2020-12 and are
 the language-neutral source of truth. To generate bindings in another
 language without re-implementing them by hand:
 
@@ -65,7 +65,7 @@ Both consumer repos pin this package by name. Install once into the shared
 venv with an editable install so edits show up immediately in both consumers:
 
 ```bash
-~/python_env/torch-env/bin/pip install -e /path/to/tarostory-contract
+~/python_env/torch-env/bin/pip install -e /path/to/ImageGenContract
 ```
 
 Each consumer's `run_tests.sh` runs the same install line idempotently before

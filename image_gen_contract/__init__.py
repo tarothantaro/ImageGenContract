@@ -2,7 +2,7 @@
 
 Both repos import from this package — there is no second Python module that
 mirrors these shapes. The JSON Schemas in ``schemas/`` are the language-neutral
-source of truth; ``tarostory_contract.messages`` is the Python binding.
+source of truth; ``image_gen_contract.messages`` is the Python binding.
 """
 
 from .messages import (

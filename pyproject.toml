@@ -1,5 +1,5 @@
 [project]
-name = "tarostory-contract"
+name = "image-gen-contract"
 version = "0.1.0"
 description = "Wire-format contract (JSON Schema + Pydantic) between the Tarostory API server and the image-gen worker."
 requires-python = ">=3.11"
@@ -19,18 +19,18 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["tarostory_contract*"]
+include = ["image_gen_contract*"]
 exclude = ["tests*"]
 
 [tool.setuptools.package-data]
-tarostory_contract = ["schemas/*.json"]
+image_gen_contract = ["schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
 
 [tool.coverage.run]
-source = ["tarostory_contract"]
+source = ["image_gen_contract"]
 
 [tool.coverage.report]
 exclude_lines = [
