@@ -20,7 +20,6 @@ from image_gen_contract import (
     OutputImage,
 )
 
-
 # --- JobMessage ---------------------------------------------------------------
 
 
@@ -148,7 +147,9 @@ def test_completion_message_completed_requires_model_version(valid_completed) ->
         CompletionMessage.model_validate(valid_completed)
 
 
-def test_completion_message_completed_requires_processing_seconds(valid_completed) -> None:
+def test_completion_message_completed_requires_processing_seconds(
+    valid_completed,
+) -> None:
     del valid_completed["processing_seconds"]
     with pytest.raises(ValidationError, match="processing_seconds"):
         CompletionMessage.model_validate(valid_completed)

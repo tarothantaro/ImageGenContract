@@ -25,6 +25,10 @@ exclude = ["tests*"]
 [tool.setuptools.package-data]
 image_gen_contract = ["schemas/*.json"]
 
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

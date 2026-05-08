@@ -52,7 +52,9 @@ class JobMessage(_StrictModel):
     @classmethod
     def _check_output_prefix(cls, v: str) -> str:
         if not v.startswith("gs://") or not v.endswith("/"):
-            raise ValueError("output_prefix must be gs://<bucket>/<dir>/ (trailing slash)")
+            raise ValueError(
+                "output_prefix must be gs://<bucket>/<dir>/ (trailing slash)"
+            )
         return v
 
     @field_validator("callback_topic")
@@ -104,10 +106,14 @@ class CompletionMessage(_StrictModel):
             if self.processing_seconds is None:
                 raise ValueError("processing_seconds required when status='completed'")
             if self.failure_reason is not None:
-                raise ValueError("failure_reason must be omitted when status='completed'")
+                raise ValueError(
+                    "failure_reason must be omitted when status='completed'"
+                )
         else:  # status == 'failed'
             if self.failure_reason is None:
                 raise ValueError("failure_reason required when status='failed'")
             if self.output_images:
-                raise ValueError("output_images must be empty/omitted when status='failed'")
+                raise ValueError(
+                    "output_images must be empty/omitted when status='failed'"
+                )
         return self

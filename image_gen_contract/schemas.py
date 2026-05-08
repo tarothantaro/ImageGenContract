@@ -15,7 +15,9 @@ SchemaName = Literal["job", "completion"]
 
 
 def load_schema(name: SchemaName) -> dict[str, Any]:
-    text = resources.files("image_gen_contract").joinpath(
-        f"schemas/{name}.json"
-    ).read_text(encoding="utf-8")
+    text = (
+        resources.files("image_gen_contract")
+        .joinpath(f"schemas/{name}.json")
+        .read_text(encoding="utf-8")
+    )
     return json.loads(text)
