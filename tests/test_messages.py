@@ -183,6 +183,65 @@ def test_completion_message_rejects_unknown_status(valid_completed) -> None:
         CompletionMessage.model_validate(valid_completed | {"status": "weird"})
 
 
+# --- CompletionMessage: panel_completed --------------------------------------
+
+
+def test_completion_message_panel_completed_round_trips(valid_panel_completed) -> None:
+    msg = CompletionMessage.model_validate(valid_panel_completed)
+
+    assert msg.status == "panel_completed"
+    assert msg.panel_index == 1
+    assert msg.total_panels == 4
+    assert msg.output_images is not None
+    assert msg.output_images[0].index == 1
+    assert msg.failure_reason is None
+
+
+@pytest.mark.parametrize(
+    "drop",
+    [
+        "output_images",
+        "model_version",
+        "processing_seconds",
+        "panel_index",
+        "total_panels",
+    ],
+)
+def test_completion_message_panel_completed_requires_field(
+    valid_panel_completed, drop
+) -> None:
+    payload = {k: v for k, v in valid_panel_completed.items() if k != drop}
+    with pytest.raises(ValidationError, match=drop):
+        CompletionMessage.model_validate(payload)
+
+
+def test_completion_message_panel_completed_rejects_failure_reason(
+    valid_panel_completed,
+) -> None:
+    with pytest.raises(ValidationError, match="failure_reason"):
+        CompletionMessage.model_validate(
+            valid_panel_completed | {"failure_reason": "should not be here"}
+        )
+
+
+def test_completion_message_panel_index_must_be_below_total_panels(
+    valid_panel_completed,
+) -> None:
+    with pytest.raises(ValidationError, match="panel_index must be < total_panels"):
+        CompletionMessage.model_validate(
+            valid_panel_completed | {"panel_index": 4, "total_panels": 4}
+        )
+
+
+def test_completion_message_total_panels_must_be_positive(
+    valid_panel_completed,
+) -> None:
+    with pytest.raises(ValidationError):
+        CompletionMessage.model_validate(
+            valid_panel_completed | {"panel_index": 0, "total_panels": 0}
+        )
+
+
 def test_completion_message_rejects_extra_fields(valid_completed) -> None:
     with pytest.raises(ValidationError):
         CompletionMessage.model_validate(valid_completed | {"hidden": True})

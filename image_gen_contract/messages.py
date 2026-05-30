@@ -82,33 +82,63 @@ class OutputImage(_StrictModel):
 
 
 class CompletionMessage(_StrictModel):
-    """Inbound message ← job-completed topic (DESIGN.md §5.2)."""
+    """Inbound message ← job-completed topic (DESIGN.md §5.2).
+
+    Three shapes, distinguished by ``status``:
+
+    * ``panel_completed`` — one panel of a multi-panel story finished. Carries
+      that single panel's image in ``output_images`` plus ``panel_index`` /
+      ``total_panels``. The worker publishes one per panel as it streams a job,
+      so the API can surface images to the user as they land. **Not terminal**:
+      the result processor records the panel image and notifies the user, but
+      does not finalize the story (no credit debit, no status flip).
+    * ``completed`` — the whole job finished. Carries every output image. This
+      is the terminal success event that finalizes the story.
+    * ``failed`` — the job failed terminally; carries ``failure_reason``.
+    """
 
     schema_version: Literal[1]
     event_id: str = Field(min_length=1)
     story_id: str = Field(min_length=1)
     user_id: str = Field(min_length=1)
     request_id: str = Field(min_length=1)
-    status: Literal["completed", "failed"]
+    status: Literal["completed", "failed", "panel_completed"]
     output_images: list[OutputImage] | None = None
     model_version: str | None = Field(default=None, min_length=1)
     processing_seconds: float | None = Field(default=None, ge=0)
     completed_at: datetime
     failure_reason: str | None = Field(default=None, min_length=1, max_length=64)
+    # Set only on ``panel_completed`` (DESIGN.md §5.2): which panel this is and
+    # how many the story has in total, so the API can track incremental progress.
+    panel_index: int | None = Field(default=None, ge=0)
+    total_panels: int | None = Field(default=None, ge=1)
 
     @model_validator(mode="after")
     def _check_status_fields(self) -> "CompletionMessage":
-        if self.status == "completed":
+        if self.status in ("completed", "panel_completed"):
             if self.output_images is None:
-                raise ValueError("output_images required when status='completed'")
+                raise ValueError(f"output_images required when status={self.status!r}")
             if self.model_version is None:
-                raise ValueError("model_version required when status='completed'")
+                raise ValueError(f"model_version required when status={self.status!r}")
             if self.processing_seconds is None:
-                raise ValueError("processing_seconds required when status='completed'")
+                raise ValueError(
+                    f"processing_seconds required when status={self.status!r}"
+                )
             if self.failure_reason is not None:
                 raise ValueError(
-                    "failure_reason must be omitted when status='completed'"
+                    f"failure_reason must be omitted when status={self.status!r}"
                 )
+            if self.status == "panel_completed":
+                if self.panel_index is None:
+                    raise ValueError(
+                        "panel_index required when status='panel_completed'"
+                    )
+                if self.total_panels is None:
+                    raise ValueError(
+                        "total_panels required when status='panel_completed'"
+                    )
+                if self.panel_index >= self.total_panels:
+                    raise ValueError("panel_index must be < total_panels")
         else:  # status == 'failed'
             if self.failure_reason is None:
                 raise ValueError("failure_reason required when status='failed'")

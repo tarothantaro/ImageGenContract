@@ -94,6 +94,14 @@ def test_pydantic_and_jsonschema_both_accept_valid_failed(valid_failed) -> None:
     assert _accepted_by_pydantic(CompletionMessage, valid_failed)
 
 
+def test_pydantic_and_jsonschema_both_accept_valid_panel_completed(
+    valid_panel_completed,
+) -> None:
+    schema = load_schema("completion")
+    assert _accepted_by_jsonschema(schema, valid_panel_completed)
+    assert _accepted_by_pydantic(CompletionMessage, valid_panel_completed)
+
+
 # --- negative parity (both reject the same kinds of bad payload) -------------
 
 
@@ -132,6 +140,25 @@ def test_completed_missing_required_field_rejected_by_both(
 def test_failed_missing_failure_reason_rejected_by_both(valid_failed) -> None:
     schema = load_schema("completion")
     payload = {k: v for k, v in valid_failed.items() if k != "failure_reason"}
+    assert not _accepted_by_jsonschema(schema, payload)
+    assert not _accepted_by_pydantic(CompletionMessage, payload)
+
+
+@pytest.mark.parametrize(
+    "drop",
+    [
+        "output_images",
+        "model_version",
+        "processing_seconds",
+        "panel_index",
+        "total_panels",
+    ],
+)
+def test_panel_completed_missing_required_field_rejected_by_both(
+    valid_panel_completed, drop
+) -> None:
+    schema = load_schema("completion")
+    payload = {k: v for k, v in valid_panel_completed.items() if k != drop}
     assert not _accepted_by_jsonschema(schema, payload)
     assert not _accepted_by_pydantic(CompletionMessage, payload)
 
