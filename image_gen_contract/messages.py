@@ -44,6 +44,11 @@ class JobMessage(_StrictModel):
     configurable_options: dict[str, object] = Field(default_factory=dict)
     input_photos: list[JobInputPhoto] = Field(min_length=1, max_length=10)
     output_count: int = Field(ge=1, le=16)
+    # Storybook layout: ``output_count`` total images = panels × variants_per_panel.
+    # The worker lays the flat outputs out as panel = index // variants_per_panel,
+    # variant = index % variants_per_panel. Default 1 = one variant per panel
+    # (legacy single-image-per-panel jobs).
+    variants_per_panel: int = Field(default=1, ge=1, le=16)
     output_prefix: str
     callback_topic: str
     enqueued_at: datetime
@@ -72,6 +77,12 @@ class OutputImage(_StrictModel):
     width: int = Field(ge=1)
     height: int = Field(ge=1)
     bytes: int = Field(ge=1)
+    # Storybook layout (DESIGN.md §4). ``index`` stays the flat unique ordinal;
+    # these decompose it into which page (panel) the image is and which A/B
+    # variant: panel_index = index // variants_per_panel, variant = index %
+    # variants_per_panel. Default 0/0 keeps single-variant (legacy) jobs valid.
+    panel_index: int = Field(default=0, ge=0)
+    variant: int = Field(default=0, ge=0)
 
     @field_validator("gcs_uri")
     @classmethod
