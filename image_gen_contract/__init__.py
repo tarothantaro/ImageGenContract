@@ -8,7 +8,7 @@ source of truth; ``image_gen_contract.messages`` is the Python binding.
 from .messages import (
     CURRENT_SCHEMA_VERSION,
     CompletionMessage,
-    JobInputPhoto,
+    JobInputImage,
     JobMessage,
     OutputImage,
 )
@@ -17,7 +17,7 @@ from .schemas import load_schema
 __all__ = [
     "CURRENT_SCHEMA_VERSION",
     "CompletionMessage",
-    "JobInputPhoto",
+    "JobInputImage",
     "JobMessage",
     "OutputImage",
     "load_schema",

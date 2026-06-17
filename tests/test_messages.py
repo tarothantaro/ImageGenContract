@@ -7,7 +7,7 @@ ImageGenWorker (tests/unit/test_schema.py) and Application server
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import timezone
 
 import pytest
 from pydantic import ValidationError
@@ -15,7 +15,7 @@ from pydantic import ValidationError
 from image_gen_contract import (
     CURRENT_SCHEMA_VERSION,
     CompletionMessage,
-    JobInputPhoto,
+    JobInputImage,
     JobMessage,
     OutputImage,
 )
@@ -28,8 +28,10 @@ def test_job_message_round_trips_canonical_payload(valid_job) -> None:
 
     assert job.schema_version == CURRENT_SCHEMA_VERSION
     assert job.story_id == "01HX_story"
-    assert job.input_photos[0].photo_id == "ph_1"
-    assert isinstance(job.enqueued_at, datetime)
+    assert job.type == 1
+    assert job.id == 1
+    assert job.input_images[0].photo_id == "ph_1"
+    assert job.input_images[0].position == 0
 
 
 def test_job_message_rejects_unknown_schema_version(valid_job) -> None:
@@ -43,70 +45,41 @@ def test_job_message_rejects_extra_fields(valid_job) -> None:
 
 
 def test_job_message_rejects_missing_required_fields(valid_job) -> None:
-    del valid_job["template_id"]
+    del valid_job["type"]
     with pytest.raises(ValidationError):
         JobMessage.model_validate(valid_job)
 
 
-def test_job_message_rejects_zero_input_photos(valid_job) -> None:
+def test_job_message_rejects_zero_input_images(valid_job) -> None:
     with pytest.raises(ValidationError):
-        JobMessage.model_validate(valid_job | {"input_photos": []})
+        JobMessage.model_validate(valid_job | {"input_images": []})
 
 
-def test_job_message_rejects_more_than_ten_input_photos(valid_job) -> None:
-    photo = valid_job["input_photos"][0]  # type: ignore[index]
-    photos = [{**photo, "photo_id": f"ph_{i}", "position": i} for i in range(11)]  # type: ignore[dict-item]
+def test_job_message_rejects_more_than_ten_input_images(valid_job) -> None:
+    images = [{"photo_id": f"ph_{i}", "position": i} for i in range(11)]
     with pytest.raises(ValidationError):
-        JobMessage.model_validate(valid_job | {"input_photos": photos})
+        JobMessage.model_validate(valid_job | {"input_images": images})
 
 
-def test_job_message_rejects_output_count_out_of_range(valid_job) -> None:
+def test_job_message_rejects_type_below_one(valid_job) -> None:
     with pytest.raises(ValidationError):
-        JobMessage.model_validate(valid_job | {"output_count": 0})
+        JobMessage.model_validate(valid_job | {"type": 0})
+
+
+def test_job_message_rejects_id_below_one(valid_job) -> None:
     with pytest.raises(ValidationError):
-        JobMessage.model_validate(valid_job | {"output_count": 17})
+        JobMessage.model_validate(valid_job | {"id": 0})
 
 
 def test_job_message_rejects_negative_position(valid_job) -> None:
-    valid_job["input_photos"] = [{**valid_job["input_photos"][0], "position": -1}]  # type: ignore[index]
+    valid_job["input_images"] = [{"photo_id": "ph_1", "position": -1}]
     with pytest.raises(ValidationError):
         JobMessage.model_validate(valid_job)
 
 
-def test_job_message_rejects_non_gs_input_uri(valid_job) -> None:
-    valid_job["input_photos"] = [
-        {**valid_job["input_photos"][0], "gcs_uri": "https://example.com/x"}  # type: ignore[index]
-    ]
-    with pytest.raises(ValidationError, match="gcs_uri"):
-        JobMessage.model_validate(valid_job)
-
-
-def test_job_message_rejects_input_uri_without_object_part(valid_job) -> None:
-    valid_job["input_photos"] = [
-        {**valid_job["input_photos"][0], "gcs_uri": "gs://only-bucket"}  # type: ignore[index]
-    ]
-    with pytest.raises(ValidationError, match="gcs_uri"):
-        JobMessage.model_validate(valid_job)
-
-
-def test_job_message_rejects_output_prefix_without_trailing_slash(valid_job) -> None:
-    with pytest.raises(ValidationError, match="output_prefix"):
-        JobMessage.model_validate(valid_job | {"output_prefix": "gs://b/path/no-slash"})
-
-
-def test_job_message_rejects_output_prefix_not_in_gcs_form(valid_job) -> None:
-    with pytest.raises(ValidationError, match="output_prefix"):
-        JobMessage.model_validate(valid_job | {"output_prefix": "/local/path/"})
-
-
-def test_job_message_rejects_callback_topic_not_in_canonical_form(valid_job) -> None:
-    with pytest.raises(ValidationError, match="callback_topic"):
-        JobMessage.model_validate(valid_job | {"callback_topic": "topic-name"})
-
-
-def test_job_input_photo_can_be_constructed_directly() -> None:
-    photo = JobInputPhoto(photo_id="ph_1", position=0, gcs_uri="gs://b/o.jpg")
-    assert photo.photo_id == "ph_1"
+def test_job_input_image_can_be_constructed_directly() -> None:
+    image = JobInputImage(photo_id="ph_1", position=0)
+    assert image.photo_id == "ph_1"
 
 
 def test_job_message_is_frozen(valid_job) -> None:

@@ -20,55 +20,38 @@ class _StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
-class JobInputPhoto(_StrictModel):
+class JobInputImage(_StrictModel):
+    """Metadata for one input image (DESIGN.md §5.1).
+
+    Carries no image bytes and no ``gcs_uri``: the worker downloads each input
+    from object storage by the deterministic per-story name
+    ``<user_id>_<story_id>_input_<position>.png``, derived from the enclosing
+    job's ``user_id`` / ``story_id`` and this entry's ``position``. ``photo_id``
+    is the canonical photo doc id, carried for tracing/correlation only.
+    """
+
     photo_id: str = Field(min_length=1)
     position: int = Field(ge=0)
-    gcs_uri: str
-
-    @field_validator("gcs_uri")
-    @classmethod
-    def _check_gcs_uri(cls, v: str) -> str:
-        if not v.startswith("gs://") or "/" not in v[5:]:
-            raise ValueError("gcs_uri must be gs://<bucket>/<object>")
-        return v
 
 
 class JobMessage(_StrictModel):
-    """Outbound message → image-gen-jobs topic (DESIGN.md §5.1)."""
+    """Outbound message → image-gen-jobs topic (DESIGN.md §5.1).
+
+    The event names *what* to generate, not the assets themselves: the worker
+    loads the prompt set ``prompts/<type>_<id>.json`` and renders it through the
+    single render template ``templates/1``, downloading inputs by the
+    ``<user_id>_<story_id>_input_<position>.png`` convention. Output location and
+    completion topic are worker config, not per-message.
+    """
 
     schema_version: Literal[1]
     story_id: str = Field(min_length=1)
     user_id: str = Field(min_length=1)
     request_id: str = Field(min_length=1)
-    template_id: str = Field(min_length=1)
-    configurable_options: dict[str, object] = Field(default_factory=dict)
-    input_photos: list[JobInputPhoto] = Field(min_length=1, max_length=10)
-    output_count: int = Field(ge=1, le=16)
-    # Storybook layout: ``output_count`` total images = panels × variants_per_panel.
-    # The worker lays the flat outputs out as panel = index // variants_per_panel,
-    # variant = index % variants_per_panel. Default 1 = one variant per panel
-    # (legacy single-image-per-panel jobs).
-    variants_per_panel: int = Field(default=1, ge=1, le=16)
-    output_prefix: str
-    callback_topic: str
-    enqueued_at: datetime
-
-    @field_validator("output_prefix")
-    @classmethod
-    def _check_output_prefix(cls, v: str) -> str:
-        if not v.startswith("gs://") or not v.endswith("/"):
-            raise ValueError(
-                "output_prefix must be gs://<bucket>/<dir>/ (trailing slash)"
-            )
-        return v
-
-    @field_validator("callback_topic")
-    @classmethod
-    def _check_callback_topic(cls, v: str) -> str:
-        parts = v.split("/")
-        if len(parts) != 4 or parts[0] != "projects" or parts[2] != "topics":
-            raise ValueError("callback_topic must be projects/<project>/topics/<name>")
-        return v
+    # Prompt selector: ``prompts/<type>_<id>.json`` (e.g. type=1, id=1 → 1_1).
+    type: int = Field(ge=1)
+    id: int = Field(ge=1)
+    input_images: list[JobInputImage] = Field(min_length=1, max_length=10)
 
 
 class OutputImage(_StrictModel):

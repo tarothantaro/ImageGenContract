@@ -110,11 +110,10 @@ def test_pydantic_and_jsonschema_both_accept_valid_panel_completed(
     [
         {"schema_version": 99},
         {"surprise": "extra"},
-        {"input_photos": []},
-        {"output_count": 0},
-        {"output_count": 17},
-        {"output_prefix": "/local/path/"},
-        {"callback_topic": "topic-name"},
+        {"input_images": []},
+        {"type": 0},
+        {"id": 0},
+        {"input_images": [{"photo_id": "ph_1", "position": -1}]},
     ],
 )
 def test_invalid_job_rejected_by_both_layers(valid_job, mutation) -> None:

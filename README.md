@@ -12,6 +12,14 @@ TaroStory API server (`../Application/server`) and the image-gen worker
 Both repos consume this package; **structural drift between worker and API
 server is the class of bug this repo exists to make impossible.**
 
+The **job** message is intentionally a thin selector — `{schema_version,
+story_id, user_id, request_id, type, id, input_images[]}`. It names *what* to
+generate (prompt `type`/`id` → `prompts/<type>_<id>.json`, rendered through the
+single `templates/1`) but carries **no image bytes and no `gcs_uri`**: the
+worker downloads each input from object storage by the deterministic name
+`<user_id>_<story_id>_input_<position>.png`. Output location and completion
+topic are worker config, not per-message.
+
 ## Layout
 
 ```
@@ -33,7 +41,7 @@ tests/
 from image_gen_contract import (
     CURRENT_SCHEMA_VERSION,
     JobMessage,
-    JobInputPhoto,
+    JobInputImage,
     CompletionMessage,
     OutputImage,
     load_schema,

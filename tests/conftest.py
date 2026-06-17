@@ -10,19 +10,11 @@ def valid_job() -> dict[str, object]:
         "story_id": "01HX_story",
         "user_id": "uid_abc",
         "request_id": "req_xyz",
-        "template_id": "tpl_v1",
-        "configurable_options": {"style": "warm"},
-        "input_photos": [
-            {
-                "photo_id": "ph_1",
-                "position": 0,
-                "gcs_uri": "gs://tarostory-prod-uploads/uid_abc/photos/ph_1.jpg",
-            }
+        "type": 1,
+        "id": 1,
+        "input_images": [
+            {"photo_id": "ph_1", "position": 0},
         ],
-        "output_count": 4,
-        "output_prefix": "gs://tarostory-prod-outputs/uid_abc/01HX_story/outputs/",
-        "callback_topic": "projects/tarostory-prod/topics/job-completed",
-        "enqueued_at": "2026-05-05T12:34:56Z",
     }
 
 
