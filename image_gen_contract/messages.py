@@ -28,10 +28,17 @@ class JobInputImage(_StrictModel):
     ``<user_id>_<story_id>_input_<position>.png``, derived from the enclosing
     job's ``user_id`` / ``story_id`` and this entry's ``position``. ``photo_id``
     is the canonical photo doc id, carried for tracing/correlation only.
+
+    ``age`` is the human-readable age of the person in this photo at story-
+    creation time (e.g. ``"2-year-old"`` or ``"23-month-old"``), computed by the
+    API server from the user's selected role. The worker substitutes it into the
+    prompt set's ``{INPUT_<position+1>_AGE}`` placeholder. Optional: a job
+    without it leaves the placeholder dropped (back-compat with age-less jobs).
     """
 
     photo_id: str = Field(min_length=1)
     position: int = Field(ge=0)
+    age: str | None = Field(default=None, max_length=32)
 
 
 class JobMessage(_StrictModel):

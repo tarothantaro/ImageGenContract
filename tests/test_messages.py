@@ -80,6 +80,20 @@ def test_job_message_rejects_negative_position(valid_job) -> None:
 def test_job_input_image_can_be_constructed_directly() -> None:
     image = JobInputImage(photo_id="ph_1", position=0)
     assert image.photo_id == "ph_1"
+    assert image.age is None
+
+
+def test_job_input_image_carries_optional_age() -> None:
+    image = JobInputImage(photo_id="ph_1", position=0, age="2-year-old")
+    assert image.age == "2-year-old"
+
+
+def test_job_message_round_trips_input_age(valid_job) -> None:
+    valid_job["input_images"] = [
+        {"photo_id": "ph_1", "position": 0, "age": "23-month-old"}
+    ]
+    job = JobMessage.model_validate(valid_job)
+    assert job.input_images[0].age == "23-month-old"
 
 
 def test_job_message_is_frozen(valid_job) -> None:
